@@ -1,0 +1,8 @@
+export_mapping:
+  members:
+    username:
+      - username
+    email:
+      - email
+  user_fields:
+    matrnr: 1

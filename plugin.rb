@@ -7,4 +7,5 @@ require_relative 'lib/course'
 
 Discourse::Application.routes.append do
   get '/admin/course/auth' => 'course/api#auth'
+  get '/admin/course/dump' => 'course/api#dump'
 end
