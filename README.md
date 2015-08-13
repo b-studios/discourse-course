@@ -5,7 +5,7 @@ This plugin adds two new API methods that can be used to interact with discourse
 
 ## Authenticate User
 ~~~
-GET /admin/course/auth
+GET /admin/course/auth.json
 ~~~
 
 #### Parameters
@@ -19,7 +19,7 @@ GET /admin/course/auth
 
 ## Dump Userdata
 ~~~
-GET /admin/course/dump
+GET /admin/course/dump.json
 ~~~
 
 #### Parameters
