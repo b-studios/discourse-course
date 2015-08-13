@@ -39,3 +39,5 @@ www:
   - website
 ~~~
 will translate into the method calls `@user.user_profile.website` and bind the result to the property `www` in the json-output.
+
+You can explore the available fields and methods on `User` in the discourse implementation [user.rb](https://github.com/discourse/discourse/blob/master/app/models/user.rb).
