@@ -1,4 +1,4 @@
-module Info1
+module Course
 
   VERSION = "0.0.1"
 

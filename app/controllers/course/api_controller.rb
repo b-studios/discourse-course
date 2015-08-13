@@ -1,6 +1,6 @@
 require_dependency 'pbkdf2'
 
-class Info1::ApiController < Admin::AdminController
+class Course::ApiController < Admin::AdminController
 
   def auth
     name = params[:user]
