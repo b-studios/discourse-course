@@ -24,7 +24,7 @@ class Course::ApiController < Admin::AdminController
       users: User.all.reject { |u| u.staff? }.map do |u|
         entry = {}
         members_mapping.each { |member| entry[member] = u.send member }
-        user_fields_mapping.each { |idx, name| entry[name] = u.user_fields[idx.to_i] }
+        user_fields_mapping.each { |idx, name| entry[name] = u.user_fields[idx] }
         entry
       end
     }
