@@ -1,5 +1,7 @@
 export_mapping:
   members:
+    id:
+      - id
     username:
       - username
     email:
