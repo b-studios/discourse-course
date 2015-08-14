@@ -6,3 +6,7 @@ export_mapping:
       - email
   user_fields:
     matrnr: 1
+    course_of_study: 2
+    firstchoice: 3
+    secondchoice: 4
+    thirdchoice: 5
