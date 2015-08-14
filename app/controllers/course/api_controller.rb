@@ -23,8 +23,8 @@ class Course::ApiController < Admin::AdminController
     render :json => {
       users: User.all.reject { |u| u.staff? }.map do |u|
         entry = {}
-        members_mapping.each { |k, v| entry[k] = lookupData(u, v) }
-        user_fields_mapping.each { |k, v| entry[k] = u.user_fields[v] }
+        members_mapping.each { |member| entry[member] = u.send member }
+        user_fields_mapping.each { |idx, name| entry[name] = u.user_fields[idx.to_i] }
         entry
       end
     }
@@ -33,11 +33,11 @@ class Course::ApiController < Admin::AdminController
   protected
 
   def members_mapping
-    Course::CONFIG['export_mapping']['members']
+    SiteSetting.export_user_members.split('|')
   end
 
   def user_fields_mapping
-    Course::CONFIG['export_mapping']['user_fields']
+    SiteSetting.export_custom_fields.split('|').map { |f| f.split ':' }
   end
 
   def fail

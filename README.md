@@ -30,14 +30,6 @@ None
 { users: [USER] }
 ~~~
 
-Here the information contained in the object USER can be configured by editing [config.yml](https://github.com/b-studios/discourse-course/blob/master/config/configs.yml).
-Each entry in the section `members` defines a property of `USER` by querying the user-object using the provided "path". A path consists of accessor methods called on the user object. For instance the entry:
-
-~~~
-www:
-  - user_profile
-  - website
-~~~
-will translate into the method calls `@user.user_profile.website` and bind the result to the property `www` in the json-output.
+Here the information contained in the object USER can be configured in the admin area of discourse under "Settings/Plugins".
 
 You can explore the available fields and methods on `User` in the discourse implementation [user.rb](https://github.com/discourse/discourse/blob/master/app/models/user.rb).
