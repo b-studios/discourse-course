@@ -61,11 +61,11 @@ class Course::ApiController < Admin::AdminController
       .split('|')
       .map { |f| f.split ':' }
       .map { |kv| kv.map {|x| x.strip } } # sanitize input
-      .to_h
+      .tap { |arr| break Hash[arr] } # since to_h is only available with 2.1.0
 
     @user_field_identifiers = UserField.all
       .map { |uf| [mapping[uf.name] || uf.name, uf.id] }
-      .to_h
+      .tap { |arr| break Hash[arr] }
   end
 
   def user_field_exists?(identifier)
