@@ -24,7 +24,7 @@ class Course::ApiController < Admin::AdminController
       users: User.all.reject { |u| u.staff? }.map do |u|
         entry = {}
         members_mapping.each { |member| entry[member] = u.send member }
-        user_fields_mapping.each { |idx, name| entry[name] = u.user_fields[idx] }
+        user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
     }
@@ -32,12 +32,33 @@ class Course::ApiController < Admin::AdminController
 
   protected
 
+  # Returns a hash "configured user field identifier: => UserField.id"
+  # If no custom identifier is provided the name of the user-field is used.
+  def user_field_identifiers
+
+    return @user_field_identifiers unless @user_field_identifiers.nil?
+
+    mapping = SiteSetting.user_fields_mapping
+      .split('|')
+      .map { |f| f.split ':' }
+      .map { |kv| kv.map {|x| x.strip } } # sanitize input
+      .to_h
+
+    @user_field_identifiers = UserField.all
+      .map { |uf| [mapping[uf.name] || uf.name, uf.id] }
+      .to_h
+  end
+
+  def user_field_by_id(user, id)
+    user.user_fields[user_field_identifiers[id].to_s]
+  end
+
   def members_mapping
     SiteSetting.export_user_members.split('|')
   end
 
   def user_fields_mapping
-    SiteSetting.export_user_fields.split('|').map { |f| f.split ':' }
+    SiteSetting.export_user_fields.split('|')
   end
 
   def fail

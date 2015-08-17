@@ -1,4 +1,7 @@
 plugins:
+  user_fields_mapping:
+    default: ''
+    type: list
   export_user_members:
     default: ''
     type: list
