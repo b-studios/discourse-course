@@ -8,19 +8,19 @@ class Course::ApiController < Admin::AdminController
 
     user = User.find_by_username name
 
-    return fail if user.nil?
+    return error("user not found") if user.nil?
 
     entered = hash_password(password, user.salt)
 
     if entered == user.password_hash then
-      render :json => { authenticated: true }
+      success
     else
-      fail
+      error("wrong password")
     end
   end
 
   def dump
-    render :json => {
+    success({
       users: User.all.reject { |u| u.staff? }.map do |u|
         entry = {}
         members_mapping
@@ -29,7 +29,7 @@ class Course::ApiController < Admin::AdminController
         user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
-    }
+    })
   end
 
   def set_user_field
@@ -46,7 +46,7 @@ class Course::ApiController < Admin::AdminController
     user_field_key = "user_field_#{user_field_identifiers[uf]}"
     user.custom_fields[user_field_key] = value
     user.save!
-    render :json => { success: true }
+    success
   end
 
   protected
@@ -88,12 +88,13 @@ class Course::ApiController < Admin::AdminController
     SiteSetting.export_user_fields.split('|')
   end
 
-  def error(msg)
-    render :json => { success: false, error: msg }
+  def success(response = {})
+    response["success"] = true
+    render :json => response
   end
 
-  def fail
-    render :json => { authenticated: false }
+  def error(msg)
+    render :json => { success: false, error: msg }
   end
 
   def lookupData(data, path)
