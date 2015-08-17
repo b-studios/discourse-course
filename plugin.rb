@@ -6,7 +6,7 @@
 require_relative 'lib/course'
 
 Discourse::Application.routes.append do
-  psot '/admin/course/auth' => 'course/api#auth'
+  post '/admin/course/auth' => 'course/api#auth'
   get  '/admin/course/dump' => 'course/api#dump'
   post '/admin/course/set_user_field' => 'course/api#set_user_field'
 end
