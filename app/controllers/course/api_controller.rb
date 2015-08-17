@@ -37,7 +37,7 @@ class Course::ApiController < Admin::AdminController
   end
 
   def user_fields_mapping
-    SiteSetting.export_custom_fields.split('|').map { |f| f.split ':' }
+    SiteSetting.export_user_fields.split('|').map { |f| f.split ':' }
   end
 
   def fail

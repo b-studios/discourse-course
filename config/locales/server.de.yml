@@ -1,4 +1,4 @@
 de:
   site_settings:
     export_user_members: "The properties of a user that should be included in the dump."
-    export_custom_fields: "The custom fields that should be included in the dump. Use the format \"num:name\" where 'num' references the custom field by position. The custom field is exported as 'name'."
+    export_user_fields: "The custom fields that should be included in the dump. Use the format \"num:name\" where 'num' references the custom field by position. The custom field is exported as 'name'."
