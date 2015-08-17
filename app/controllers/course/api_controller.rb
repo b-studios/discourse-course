@@ -30,6 +30,23 @@ class Course::ApiController < Admin::AdminController
     }
   end
 
+  def set_user_field
+    uf = params[:userfield]
+    userid = params[:userid]
+    value = params[:value]
+
+    return error("provided user field not found") unless user_field_exists? uf
+
+    return error("user not found") unless user = User.find_by_id(userid)
+
+    return error("no value provided") if value.nil?
+
+    user_field_key = "user_field_#{user_field_identifiers[uf]}"
+    user.custom_fields[user_field_key] = value
+    user.save!
+    render :json => { success: true }
+  end
+
   protected
 
   # Returns a hash "configured user field identifier: => UserField.id"
@@ -49,6 +66,10 @@ class Course::ApiController < Admin::AdminController
       .to_h
   end
 
+  def user_field_exists?(identifier)
+    not identifier.nil? and not user_field_identifiers[identifier].nil?
+  end
+
   def user_field_by_id(user, id)
     user.user_fields[user_field_identifiers[id].to_s]
   end
@@ -59,6 +80,10 @@ class Course::ApiController < Admin::AdminController
 
   def user_fields_mapping
     SiteSetting.export_user_fields.split('|')
+  end
+
+  def error(msg)
+    render :json => { success: false, error: msg }
   end
 
   def fail
