@@ -23,7 +23,9 @@ class Course::ApiController < Admin::AdminController
     render :json => {
       users: User.all.reject { |u| u.staff? }.map do |u|
         entry = {}
-        members_mapping.each { |member| entry[member] = u.send member }
+        members_mapping
+          .select { |member| allowed_fields.include? member }
+          .each { |member| entry[member] = u.send member }
         user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
@@ -76,6 +78,10 @@ class Course::ApiController < Admin::AdminController
 
   def members_mapping
     SiteSetting.export_user_members.split('|')
+  end
+
+  def allowed_fields
+    %w(id username name email active approved title)
   end
 
   def user_fields_mapping
