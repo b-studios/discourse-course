@@ -81,7 +81,7 @@ class Course::ApiController < Admin::AdminController
   end
 
   def allowed_fields
-    %w(id username name email active approved title)
+    %w(id username name email active approved title updated_at)
   end
 
   def user_fields_mapping
