@@ -49,6 +49,35 @@ class Course::ApiController < Admin::AdminController
     success
   end
 
+  def set_user_fields
+    data = params[:data]
+
+    puts params.inspect
+    #params[:page] = JSON.parse params[:page] if params[:page].is_a? String
+
+    def read(entry)
+      [entry[:userid], entry[:userfield], entry[:value]]
+    end
+
+    # 1. Step: Validation
+    data.each do |entry|
+      id, field, value = read entry
+      return error("user field #{field} not found") unless user_field_exists? field
+      return error("user #{id} not found") unless User.find_by_id id
+      return error("no value provided for user #{id} and userfield #{field}") if value.nil?
+    end
+
+    # 2. Step: Data Update
+    data.each do |entry|
+      id, field, value = read entry
+      user_field_key = "user_field_#{user_field_identifiers[field]}"
+      user = User.find_by_id id
+      user.custom_fields[user_field_key] = value
+      user.save!
+    end
+    success
+  end
+
   protected
 
   # Returns a hash "configured user field identifier: => UserField.id"

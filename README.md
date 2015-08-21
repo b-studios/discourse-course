@@ -1,7 +1,7 @@
 # discourse-course
 Plugin to use discourse as primitive authentication provider and to export selected user data
 
-This plugin adds three new API methods that can be used to interact with discourse as central user database. All of them require an admin user API token.
+This plugin adds a couple of new API methods that can be used to interact with discourse as central user database. All of them require an admin user API token.
 
 #### General Output
 All API methods return a boolean flag that indicates the success of the method call:
@@ -51,6 +51,41 @@ PUT /admin/course/user_field.json
 - value
 
 `userfield` is either the name of the userfield to set a value or a custom identifier, configured under "Settings/Plugins".
+
+#### Additional Output
+None
+
+## Set User Fields
+~~~
+PUT /admin/course/user_fields.json
+~~~
+
+#### Parameters
+- { data: [USER_FIELD_UPDATE] }
+
+where
+
+~~~
+USER_FIELD_UPDATE = {
+  userid: Number,
+  userfield: String,
+  value: String
+}
+~~~
+
+It is important that the following headers are set in your request:
+
+~~~
+Content-Type: application/json
+Accept: application/json
+~~~
+
+For instance when using `curl`:
+~~~
+url -X PUT -H 'Accept: application/json' -H 'Content-type: application/json' -d '{ "data" : [{ "userid": 1, ...}] }' '<URL>/admin/course/user_fields.json?api_key=<API_KEY>&api_username=<USERNAME>'
+~~~
+
+For possible values of `USER_FIELD_UPDATE` properties see "Set User Field". Updating
 
 #### Additional Output
 None
