@@ -42,7 +42,7 @@ You can explore the available fields and methods on `User` in the discourse impl
 
 ## Set User Field
 ~~~
-POST /admin/course/set_user_field.json
+PUT /admin/course/user_field.json
 ~~~
 
 #### Parameters
