@@ -21,7 +21,7 @@ class Course::ApiController < Admin::AdminController
 
   def dump
 
-    dumpStaff = params[:staff] || false
+    dumpStaff = (params[:staff] == "true") || false
 
     success({
       users: User.all.select { |u| u.staff? == dumpStaff }.map do |u|
