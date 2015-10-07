@@ -27,9 +27,12 @@ None
 ~~~
 GET /admin/course/dump.json
 ~~~
+Dumps the userdata together with customized user-fields. The flag `staff` can
+be used to indicate whether only students or only staff should be dumped.
+Right now it is not possible to dump both at the same time.
 
 #### Parameters
-None
+- staff: Boolean (Defaults to `false`)
 
 #### Additional Output
 ~~~

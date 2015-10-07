@@ -20,8 +20,11 @@ class Course::ApiController < Admin::AdminController
   end
 
   def dump
+
+    dumpStaff = params[:staff] || false
+
     success({
-      users: User.all.reject { |u| u.staff? }.map do |u|
+      users: User.all.select { |u| u.staff? == dumpStaff }.map do |u|
         entry = {}
         members_mapping
           .select { |member| allowed_fields.include? member }
