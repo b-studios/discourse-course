@@ -1,6 +1,6 @@
 # name: course
 # about: A plugin to use Discourse as auth provider
-# version: 0.0.1
+# version: 0.0.2
 # authors: Jonathan Brachthäuser
 
 require_relative 'lib/course'
