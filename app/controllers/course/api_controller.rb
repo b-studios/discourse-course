@@ -29,7 +29,9 @@ class Course::ApiController < Admin::AdminController
         entry = {}
         members_mapping
           .select { |member| allowed_fields.include? member }
-          .each { |member| entry[member] = u.send member }
+          .each { |member|
+            entry[member] = render_user_member(member, u.send(member))
+          }
         user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
@@ -114,7 +116,7 @@ class Course::ApiController < Admin::AdminController
   end
 
   def allowed_fields
-    %w(id username name email active approved title updated_at)
+    %w(id username name email active approved title updated_at groups)
   end
 
   def user_fields_mapping
@@ -138,6 +140,20 @@ class Course::ApiController < Admin::AdminController
   def hash_password(password, salt)
     raise "password is too long" if password.size > User.max_password_length
     Pbkdf2.hash_password(password, salt, Rails.configuration.pbkdf2_iterations, Rails.configuration.pbkdf2_algorithm)
+  end
+
+  # convert user member to JSON according to its name
+  def render_user_member(member, value)
+    if member == "groups"
+      value.as_json.map { |group| group["name"] }
+    else
+      value
+    end
+  end
+
+  # convert ActiveRecord user.groups to array of group names
+  def render_user_groups(groups)
+    groups.map(&:name).asJson
   end
 
 end
