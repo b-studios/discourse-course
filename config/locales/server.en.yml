@@ -3,3 +3,5 @@ en:
     user_fields_mapping: "A mapping of user field names to identifiers that can then be used to lookup user fields. Use the format \"name:identifier\" (i.e. \"My Userfield:my_userfield\").<br/>If no mapping for a field is provided, the field can be referenced by its original name."
     export_user_members: "The properties of a user that should be included in the dump."
     export_user_fields: "The user fields that should be included in the dump. If you provided a mapping above, use the new identifier of the userfield, otherwise its original name."
+    default_lecture_group: "The user group to assign to non-staff users without an active lecture group."
+    active_lecture_groups: "List of names of userfields/usergroups maintained by the user manual actions of checking and unchecking the corresponding checkboxes on their preference page or on registration."
