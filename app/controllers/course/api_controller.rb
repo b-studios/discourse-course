@@ -96,6 +96,17 @@ class Course::ApiController < Admin::AdminController
     success
   end
 
+  def synchronize_user_fields_and_groups
+    username = params[:user]
+    user = username && User.all.select{ |u| u.username == username }.first
+    return error("user not found: #{username.inspect}") unless user
+    active_groups = get_active_groups(fail_silently = false)
+    if active_groups
+      synchronize_groups_with_fields_of_user(active_groups, user)
+      success({ username: user.username, groups: render_user_groups(user.groups) })
+    end
+  end
+
   protected
 
   # Returns a hash "configured user field identifier: => UserField.id"
@@ -104,8 +115,7 @@ class Course::ApiController < Admin::AdminController
 
     return @user_field_identifiers unless @user_field_identifiers.nil?
 
-    mapping = SiteSetting.user_fields_mapping
-      .split('|')
+    mapping = setting_to_list(SiteSetting.user_fields_mapping)
       .map { |f| f.split ':' }
       .map { |kv| kv.map {|x| x.strip } } # sanitize input
       .tap { |arr| break Hash[arr] } # since to_h is only available with 2.1.0
@@ -124,7 +134,7 @@ class Course::ApiController < Admin::AdminController
   end
 
   def members_mapping
-    SiteSetting.export_user_members.split('|')
+    setting_to_list(SiteSetting.export_user_members)
   end
 
   def allowed_fields
@@ -132,7 +142,32 @@ class Course::ApiController < Admin::AdminController
   end
 
   def user_fields_mapping
-    SiteSetting.export_user_fields.split('|')
+    setting_to_list(SiteSetting.export_user_fields)
+  end
+
+  # get actively maintained lecture user groups.
+  # unless failure is silent (default behavior),
+  # render error if plugin setting and user groups are inconsistent,
+  # and return nil.
+  def get_active_groups(fail_silently = true)
+    active_group_names = setting_to_list(SiteSetting.active_lecture_groups)
+    result = Group.all.select { |g| active_group_names.include? g.name }
+    if fail_silently
+      result
+    elsif result.size == active_group_names.size
+      # result is sane
+      result
+    else
+      # result is insane
+      error("incongruent configuration: " +
+            "plugin settings = #{active_group_names.inspect}, " +
+            "valid user groups among them = #{result.map(&:name).to_a.inspect}")
+      nil
+    end
+  end
+
+  def setting_to_list(setting)
+    setting.split('|')
   end
 
   def success(response = {})
@@ -157,7 +192,7 @@ class Course::ApiController < Admin::AdminController
   # convert user member to JSON according to its name
   def render_user_member(member, value)
     if member == "groups"
-      value.as_json.map { |group| group["name"] }
+      render_user_groups(value)
     else
       value
     end
@@ -165,15 +200,28 @@ class Course::ApiController < Admin::AdminController
 
   # convert ActiveRecord user.groups to array of group names
   def render_user_groups(groups)
-    groups.map(&:name).asJson
+    groups.map(&:name).as_json
   end
 
   # returns whether a user checked all named confirmation checkboxes
   def all_confirmations_checked(user, confirmed)
-    confirmed.map { |boxName|
-      value = user_field_by_id(user, boxName)
-      ! (value.nil? || value.empty?)
-    }.inject(:&)
+    confirmed.map{ |checkboxName| confirmed?(user, checkboxName) }.inject(:&)
   end
 
+  def confirmed?(user, checkboxName)
+    value = user_field_by_id(user, checkboxName)
+    ! (value.nil? || value.empty?)
+  end
+
+  # set groups membership according to user fields matching `active_groups
+  def synchronize_groups_with_fields_of_user(groups, user)
+    groups.each do |group|
+      if confirmed?(user, group.name)
+        user.groups << group unless user.groups.include?(group)
+      else
+        user.groups.delete(group) if user.groups.include?(group)
+      end
+    end
+    user.save!
+  end
 end
