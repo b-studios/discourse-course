@@ -21,18 +21,30 @@ class Course::ApiController < Admin::AdminController
   end
 
   def dump
-
+    exported = params[:export] && JSON.parse(params[:export])
     dumpStaff = params[:staff] == "true"
+    group = params[:group]
+    confirmed = params[:confirmed] && JSON.parse(params[:confirmed])
+
+
+    exportedMembers = exported ? exported.select { |m| allowed_fields.include? m } : members_mapping
+    exportedFields = exported ? exported - exportedMembers : user_fields_mapping
+
+    selectedUsers = User.all.select { |u|
+      u.staff? == dumpStaff &&
+        (group.nil? || u.groups.map(&:name).include?(group)) &&
+        (confirmed.nil? || all_confirmations_checked(u, confirmed))
+    }
 
     success({
-      users: User.all.select { |u| u.staff? == dumpStaff }.map do |u|
+      users: selectedUsers.map do |u|
         entry = {}
-        members_mapping
+        exportedMembers
           .select { |member| allowed_fields.include? member }
           .each { |member|
             entry[member] = render_user_member(member, u.send(member))
           }
-        user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
+        exportedFields.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
     })
@@ -154,6 +166,14 @@ class Course::ApiController < Admin::AdminController
   # convert ActiveRecord user.groups to array of group names
   def render_user_groups(groups)
     groups.map(&:name).asJson
+  end
+
+  # returns whether a user checked all named confirmation checkboxes
+  def all_confirmations_checked(user, confirmed)
+    confirmed.map { |boxName|
+      value = user_field_by_id(user, boxName)
+      ! (value.nil? || value.empty?)
+    }.inject(:&)
   end
 
 end

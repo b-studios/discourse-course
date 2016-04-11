@@ -32,7 +32,11 @@ be used to indicate whether only students or only staff should be dumped.
 Right now it is not possible to dump both at the same time.
 
 #### Parameters
-- staff: Boolean (Defaults to `false`)
+- export: [String] (Exported members and fields of `USER`, e.g., `["username","info1"]`.
+  Defaults to `SiteSetting.export_user_members.split('|')`.)
+- staff: Boolean (Select by `user.staff`. Defaults to `false`.)
+- group: String (Select members of named group. Defaults to `nil`.)
+- confirmed: [String] (Select by checked confirmation user fields. Defaults to `nil`.)
 
 #### Additional Output
 ~~~
