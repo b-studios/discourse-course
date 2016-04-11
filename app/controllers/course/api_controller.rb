@@ -1,4 +1,5 @@
 require_dependency 'pbkdf2'
+require_dependency 'json'
 
 class Course::ApiController < Admin::AdminController
 
@@ -122,7 +123,7 @@ class Course::ApiController < Admin::AdminController
 
   def success(response = {})
     response["success"] = true
-    render :json => response
+    render :json => JSON.pretty_generate(response)
   end
 
   def error(msg)
