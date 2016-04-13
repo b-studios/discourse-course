@@ -32,7 +32,11 @@ be used to indicate whether only students or only staff should be dumped.
 Right now it is not possible to dump both at the same time.
 
 #### Parameters
-- staff: Boolean (Defaults to `false`)
+- export: [String] (Exported members and fields of `USER`, e.g., `["username","info1"]`.
+  Defaults to `SiteSetting.export_user_members.split('|')`.)
+- staff: Boolean (Select by `user.staff`. Defaults to `false`.)
+- group: String (Select members of named group. Defaults to `nil`.)
+- confirmed: [String] (Select by checked confirmation user fields. Defaults to `nil`.)
 
 #### Additional Output
 ~~~
@@ -92,3 +96,35 @@ For possible values of `USER_FIELD_UPDATE` properties see "Set User Field". Upda
 
 #### Additional Output
 None
+
+
+## Add People to Default Lecture Group
+~~~
+GET /admin/course/add_people_to_default_lecture_group.json
+~~~
+
+For all non-staff users not belonging to any active lecture, add them to the default lecture group.
+
+#### Parameters
+
+None
+
+#### Additional Output
+
+List of usernames newly added to default lecture group
+
+
+## Synchronize Fields and Groups for All Users
+~~~
+GET /admin/course/synchronize_all_user_fields_and_groups.json
+~~~
+
+For all non-staff users, set their membership in active lecture groups according to the corresponding user fields.
+
+#### Parameters
+
+None
+
+#### Additional Output
+
+List of usernames whose user groups are modified by the command

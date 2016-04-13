@@ -8,3 +8,9 @@ plugins:
   export_user_fields:
     default: ''
     type: list
+  default_lecture_group:
+    default: ''
+    type: string
+  active_lecture_groups:
+    default: ''
+    type: list

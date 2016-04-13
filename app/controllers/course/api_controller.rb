@@ -21,16 +21,30 @@ class Course::ApiController < Admin::AdminController
   end
 
   def dump
-
+    exported = params[:export] && JSON.parse(params[:export])
     dumpStaff = params[:staff] == "true"
+    group = params[:group]
+    confirmed = params[:confirmed] && JSON.parse(params[:confirmed])
+
+
+    exportedMembers = exported ? exported.select { |m| allowed_fields.include? m } : members_mapping
+    exportedFields = exported ? exported - exportedMembers : user_fields_mapping
+
+    selectedUsers = User.all.select { |u|
+      u.staff? == dumpStaff &&
+        (group.nil? || u.groups.map(&:name).include?(group)) &&
+        (confirmed.nil? || all_confirmations_checked(u, confirmed))
+    }
 
     success({
-      users: User.all.select { |u| u.staff? == dumpStaff }.map do |u|
+      users: selectedUsers.map do |u|
         entry = {}
-        members_mapping
+        exportedMembers
           .select { |member| allowed_fields.include? member }
-          .each { |member| entry[member] = u.send member }
-        user_fields_mapping.each { |id| entry[id] = user_field_by_id(u, id) }
+          .each { |member|
+            entry[member] = render_user_member(member, u.send(member))
+          }
+        exportedFields.each { |id| entry[id] = user_field_by_id(u, id) }
         entry
       end
     })
@@ -82,6 +96,44 @@ class Course::ApiController < Admin::AdminController
     success
   end
 
+  def synchronize_user_fields_and_groups
+    username = params[:user]
+    user = username && User.all.find{ |u| u.username == username }
+    return error("user not found: #{username.inspect}") unless user
+    active_groups = get_active_groups(fail_silently = false)
+    if active_groups
+      synchronize_groups_with_fields_of_user(active_groups, user)
+      success({ username: user.username, groups: render_user_groups(user.groups) })
+    end
+  end
+
+  def synchronize_all_user_fields_and_groups
+    active_groups = get_active_groups(fail_silently = false)
+    return unless active_groups
+    users = User.all.select { |user|
+      ! user.staff? &&
+      synchronize_groups_with_fields_of_user(active_groups, user)
+    }
+    success({ modified_users: users.map(&:username) })
+  end
+
+  def add_people_to_default_lecture_group
+    default_group = Group.all.find{ |g| default_lecture_group == g.name }
+    active_groups = active_lecture_groups
+    users = User.all.select { |user|
+      ! user.staff? &&
+      ! some_confirmations_checked(user, active_groups) &&
+      ! user.groups.include?(default_group)
+    }
+
+    users.each { |user|
+      user.groups << default_group
+      user.save!
+    }
+
+    success({ modified_users: users.map(&:username) })
+  end
+
   protected
 
   # Returns a hash "configured user field identifier: => UserField.id"
@@ -90,8 +142,7 @@ class Course::ApiController < Admin::AdminController
 
     return @user_field_identifiers unless @user_field_identifiers.nil?
 
-    mapping = SiteSetting.user_fields_mapping
-      .split('|')
+    mapping = setting_to_list(SiteSetting.user_fields_mapping)
       .map { |f| f.split ':' }
       .map { |kv| kv.map {|x| x.strip } } # sanitize input
       .tap { |arr| break Hash[arr] } # since to_h is only available with 2.1.0
@@ -110,15 +161,40 @@ class Course::ApiController < Admin::AdminController
   end
 
   def members_mapping
-    SiteSetting.export_user_members.split('|')
+    setting_to_list(SiteSetting.export_user_members)
   end
 
   def allowed_fields
-    %w(id username name email active approved title updated_at)
+    %w(id username name email active approved title updated_at groups)
   end
 
   def user_fields_mapping
-    SiteSetting.export_user_fields.split('|')
+    setting_to_list(SiteSetting.export_user_fields)
+  end
+
+  # get actively maintained lecture user groups.
+  # unless failure is silent (default behavior),
+  # render error if plugin setting and user groups are inconsistent,
+  # and return nil.
+  def get_active_groups(fail_silently = true)
+    active_group_names = active_lecture_groups
+    result = Group.all.select { |g| active_group_names.include? g.name }
+    if fail_silently
+      result
+    elsif result.size == active_group_names.size
+      # result is sane
+      result
+    else
+      # result is insane
+      error("incongruent configuration: " +
+            "plugin settings = #{active_group_names.inspect}, " +
+            "valid user groups among them = #{result.map(&:name).to_a.inspect}")
+      nil
+    end
+  end
+
+  def setting_to_list(setting)
+    setting.split('|')
   end
 
   def success(response = {})
@@ -140,4 +216,61 @@ class Course::ApiController < Admin::AdminController
     Pbkdf2.hash_password(password, salt, Rails.configuration.pbkdf2_iterations, Rails.configuration.pbkdf2_algorithm)
   end
 
+  # convert user member to JSON according to its name
+  def render_user_member(member, value)
+    if member == "groups"
+      render_user_groups(value)
+    else
+      value
+    end
+  end
+
+  # convert ActiveRecord user.groups to array of group names
+  def render_user_groups(groups)
+    groups.map(&:name).as_json
+  end
+
+  # returns whether a user checked all named confirmation checkboxes
+  def all_confirmations_checked(user, confirmed)
+    confirmed.map{ |checkboxName| confirmed?(user, checkboxName) }.inject(:&)
+  end
+
+  # returns whether a user checked one named confirmation checkboxes
+  def some_confirmations_checked(user, confirmed)
+    confirmed.map{ |checkboxName| confirmed?(user, checkboxName) }.inject(:|)
+  end
+
+  def confirmed?(user, checkboxName)
+    value = user_field_by_id(user, checkboxName)
+    ! (value.nil? || value.empty?)
+  end
+
+  # set groups membership according to user fields matching `active_groups
+  def synchronize_groups_with_fields_of_user(groups, user)
+    modified = false
+    groups.each do |group|
+      if confirmed?(user, group.name)
+        unless user.groups.include?(group)
+          user.groups << group
+          modified = true
+        end
+      else
+        if user.groups.include?(group)
+          user.groups.delete(group)
+          modified = true
+        end
+      end
+    end
+    user.save!
+    modified
+  end
+
+  def active_lecture_groups
+    setting_to_list(SiteSetting.active_lecture_groups)
+  end
+
+  # the user group to give people not subscribed to any lecture
+  def default_lecture_group
+    SiteSetting.default_lecture_group
+  end
 end
