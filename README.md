@@ -98,7 +98,7 @@ For possible values of `USER_FIELD_UPDATE` properties see "Set User Field". Upda
 None
 
 
-## Dump Userdata
+## Add People to Default Lecture Group
 ~~~
 GET /admin/course/add_people_to_default_lecture_group.json
 ~~~
