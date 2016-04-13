@@ -98,13 +98,30 @@ class Course::ApiController < Admin::AdminController
 
   def synchronize_user_fields_and_groups
     username = params[:user]
-    user = username && User.all.select{ |u| u.username == username }.first
+    user = username && User.all.find{ |u| u.username == username }
     return error("user not found: #{username.inspect}") unless user
     active_groups = get_active_groups(fail_silently = false)
     if active_groups
       synchronize_groups_with_fields_of_user(active_groups, user)
       success({ username: user.username, groups: render_user_groups(user.groups) })
     end
+  end
+
+  def add_people_to_default_lecture_group
+    default_group = Group.all.find{ |g| default_lecture_group == g.name }
+    active_groups = active_lecture_groups
+    users = User.all.select { |user|
+      ! user.staff? &&
+      ! some_confirmations_checked(user, active_groups) &&
+      ! user.groups.include?(default_group)
+    }
+
+    users.each { |user|
+      user.groups << default_group
+      user.save!
+    }
+
+    success({ modified_users: users.map(&:username) })
   end
 
   protected
@@ -150,7 +167,7 @@ class Course::ApiController < Admin::AdminController
   # render error if plugin setting and user groups are inconsistent,
   # and return nil.
   def get_active_groups(fail_silently = true)
-    active_group_names = setting_to_list(SiteSetting.active_lecture_groups)
+    active_group_names = active_lecture_groups
     result = Group.all.select { |g| active_group_names.include? g.name }
     if fail_silently
       result
@@ -208,6 +225,11 @@ class Course::ApiController < Admin::AdminController
     confirmed.map{ |checkboxName| confirmed?(user, checkboxName) }.inject(:&)
   end
 
+  # returns whether a user checked one named confirmation checkboxes
+  def some_confirmations_checked(user, confirmed)
+    confirmed.map{ |checkboxName| confirmed?(user, checkboxName) }.inject(:|)
+  end
+
   def confirmed?(user, checkboxName)
     value = user_field_by_id(user, checkboxName)
     ! (value.nil? || value.empty?)
@@ -223,5 +245,14 @@ class Course::ApiController < Admin::AdminController
       end
     end
     user.save!
+  end
+
+  def active_lecture_groups
+    setting_to_list(SiteSetting.active_lecture_groups)
+  end
+
+  # the user group to give people not subscribed to any lecture
+  def default_lecture_group
+    SiteSetting.default_lecture_group
   end
 end

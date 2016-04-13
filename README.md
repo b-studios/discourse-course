@@ -96,3 +96,19 @@ For possible values of `USER_FIELD_UPDATE` properties see "Set User Field". Upda
 
 #### Additional Output
 None
+
+
+## Dump Userdata
+~~~
+GET /admin/course/add_people_to_default_lecture_group.json
+~~~
+
+For all users not belonging to any active lecture, add them to the default lecture group.
+
+#### Parameters
+
+None
+
+#### Additional Output
+
+List of usernames newly added to default lecture group
