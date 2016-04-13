@@ -103,7 +103,7 @@ None
 GET /admin/course/add_people_to_default_lecture_group.json
 ~~~
 
-For all users not belonging to any active lecture, add them to the default lecture group.
+For all non-staff users not belonging to any active lecture, add them to the default lecture group.
 
 #### Parameters
 
@@ -112,3 +112,19 @@ None
 #### Additional Output
 
 List of usernames newly added to default lecture group
+
+
+## Synchronize Fields and Groups for All Users
+~~~
+GET /admin/course/synchronize_all_user_fields_and_groups.json
+~~~
+
+For all non-staff users, set their membership in active lecture groups according to the corresponding user fields.
+
+#### Parameters
+
+None
+
+#### Additional Output
+
+List of usernames whose user groups are modified by the command

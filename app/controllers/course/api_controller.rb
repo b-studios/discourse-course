@@ -107,6 +107,16 @@ class Course::ApiController < Admin::AdminController
     end
   end
 
+  def synchronize_all_user_fields_and_groups
+    active_groups = get_active_groups(fail_silently = false)
+    return unless active_groups
+    users = User.all.select { |user|
+      ! user.staff? &&
+      synchronize_groups_with_fields_of_user(active_groups, user)
+    }
+    success({ modified_users: users.map(&:username) })
+  end
+
   def add_people_to_default_lecture_group
     default_group = Group.all.find{ |g| default_lecture_group == g.name }
     active_groups = active_lecture_groups
@@ -237,14 +247,22 @@ class Course::ApiController < Admin::AdminController
 
   # set groups membership according to user fields matching `active_groups
   def synchronize_groups_with_fields_of_user(groups, user)
+    modified = false
     groups.each do |group|
       if confirmed?(user, group.name)
-        user.groups << group unless user.groups.include?(group)
+        unless user.groups.include?(group)
+          user.groups << group
+          modified = true
+        end
       else
-        user.groups.delete(group) if user.groups.include?(group)
+        if user.groups.include?(group)
+          user.groups.delete(group)
+          modified = true
+        end
       end
     end
     user.save!
+    modified
   end
 
   def active_lecture_groups

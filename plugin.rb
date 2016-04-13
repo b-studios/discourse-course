@@ -15,6 +15,9 @@ Discourse::Application.routes.append do
   # hence GET. Webhooks will use POST, to be handled by another method.
   get '/admin/course/synchronize_user_fields_and_groups' => 'course/api#synchronize_user_fields_and_groups'
 
+  # Synchronize fields and groups for all users
+  get '/admin/course/synchronize_all_user_fields_and_groups' => 'course/api#synchronize_all_user_fields_and_groups'
+
   # Give all users not subscribed to any lecture
   # the group `SiteSetting.default_lecture_group`
   get '/admin/course/add_people_to_default_lecture_group' => 'course/api#add_people_to_default_lecture_group'
