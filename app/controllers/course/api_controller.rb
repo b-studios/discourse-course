@@ -25,16 +25,25 @@ class Course::ApiController < Admin::AdminController
     dumpStaff = params[:staff] == "true"
     group = params[:group]
     confirmed = params[:confirmed] && JSON.parse(params[:confirmed])
+    name = params[:user]
 
+    user = User.find_by_username name
 
     exportedMembers = exported ? exported.select { |m| allowed_fields.include? m } : members_mapping
     exportedFields = exported ? exported - exportedMembers : user_fields_mapping
 
-    selectedUsers = User.all.select { |u|
-      u.staff? == dumpStaff &&
-        (group.nil? || u.groups.map(&:name).include?(group)) &&
-        (confirmed.nil? || all_confirmations_checked(u, confirmed))
-    }
+    selectedUsers =
+      if user.nil?
+        User.all.select { |u|
+          u.staff? == dumpStaff &&
+            (group.nil? || u.groups.map(&:name).include?(group)) &&
+            (confirmed.nil? || all_confirmations_checked(u, confirmed))
+        }
+      else
+        return error("user not found") unless user.staff? == dumpStaff
+
+        [user]
+      end
 
     success({
       users: selectedUsers.map do |u|
